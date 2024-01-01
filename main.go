@@ -6,6 +6,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"cartify/catalogue/infrastructure/repository"
 	"cartify/catalogue/interfaces"
@@ -40,6 +42,16 @@ func main() {
 		BookRepository: bookRepository,
 	})
 
+	var stop = make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM)
+	signal.Notify(stop, syscall.SIGINT)
+
+	go func() {
+		sig := <-stop
+		log.Printf("%v", sig)
+		server.GracefulStop()
+	}()
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -50,4 +62,7 @@ func main() {
 	if err = server.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+
+	log.Println("shutdown success, bye!")
+
 }

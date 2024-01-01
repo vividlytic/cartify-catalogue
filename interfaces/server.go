@@ -8,6 +8,8 @@ import (
 	"cartify/catalogue/app/usecase/book"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
 	"cartify/catalogue/domain/repository"
@@ -24,6 +26,11 @@ func NewServer(params ServerParams) *grpc.Server {
 		book.NewListBooks(params.BookRepository),
 		book.NewGetBook(params.BookRepository),
 	)
+
+	hsrv := health.NewServer()
+	hsrv.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+
+	healthpb.RegisterHealthServer(server, hsrv)
 
 	reflection.Register(server)
 
